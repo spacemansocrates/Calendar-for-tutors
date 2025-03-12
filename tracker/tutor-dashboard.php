@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
             <div class="user-info">
                 <p>Welcome, <?php echo htmlspecialchars($tutorName); ?></p>
                 <a href="logout.php" class="button-link">Log Out</a>
-                <a href="lesson-schedule.php" class="button-link">schedule</a>
+                
                 <a href="select_student.php" class="button-link">topics</a>
                 <a href="homework.php" class="button-link">homeworks</a>
             </div>
@@ -271,6 +271,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
         </div>
     </div>
 
+    <div class="card">
+    <h2>Chat</h2>
+    </div>
     <!-- Add Lesson Modal -->
     <div id="lessonModal" class="modal">
         <div class="modal-content">
