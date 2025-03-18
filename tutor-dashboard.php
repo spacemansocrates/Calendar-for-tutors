@@ -106,8 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
             <div class="user-info">
                 <p>Welcome, <?php echo htmlspecialchars($tutorName); ?></p>
                 <a href="logout.php" class="button-link">Log Out</a>
-                <a href="lesson-schedule.php" class="button-link">schedule</a>
+                
+                <a href="select_student.php" class="button-link">topics</a>
                 <a href="homework.php" class="button-link">homeworks</a>
+                <a href="tutordash.php" class="button-link">dash</a>
             </div>
         </div>
 
@@ -174,6 +176,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
                                 echo '<div class="lesson-time">' . $startTime . '</div>';
                                 echo '<div class="lesson-student">' . htmlspecialchars($lesson['student_name']) . '</div>';
                                 echo '<div class="lesson-type">' . htmlspecialchars($lesson['lesson_type']) . '</div>';
+                                
+                                // Add Google Meet button for scheduled lessons
+                                if ($lesson['session_status'] == 'Scheduled') {
+                                    echo '<div class="lesson-actions">';
+                                    echo '<button class="meet-button" onclick="startLesson(' . $lesson['id'] . ')">Join Meet</button>';
+                                    echo '</div>';
+                                }
+                                
+                                // Add Update button for completed lessons
+                                if ($lesson['session_status'] == 'Delivered') {
+                                    echo '<div class="lesson-actions">';
+                                    echo '<button class="update-button" onclick="openUpdateModal(' . $lesson['id'] . ')">Update</button>';
+                                    echo '</div>';
+                                }
+                                
                                 echo '</div>';
                             }
                             echo '</div>';
@@ -193,6 +210,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
                 </div>
             </div>
         </div>
+        <style>
+.lesson-actions {
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    right: 0;
+}
+
+.lesson-item {
+    position: relative;
+    padding-bottom: 26px; /* Add extra padding to make room for the hidden buttons */
+}
+
+.lesson-item:hover .lesson-actions {
+    opacity: 1;
+}
+
+.meet-button, .update-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    height: 24px;
+    width: 90%;
+    padding: 0 12px;
+    border: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.meet-button {
+    background-color: #4285F4;
+    color: white;
+}
+
+.update-button {
+    background-color: #10b981;
+    color: white;
+}
+
+.meet-button:hover, .update-button:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+}
+
+.meet-button:active, .update-button:active {
+    filter: brightness(0.95);
+    transform: translateY(0);
+}
+
+.meet-button:focus, .update-button:focus {
+    outline: 2px solid rgba(66, 133, 244, 0.3);
+    outline-offset: 2px;
+}
+
+.update-button:focus {
+    outline: 2px solid rgba(16, 185, 129, 0.3);
+}
+        </style>
 
         <!-- Lesson Stats Card -->
         <div class="card">
@@ -270,6 +354,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
         </div>
     </div>
 
+    <div class="card">
+    <h2>Chat</h2>
+    </div>
     <!-- Add Lesson Modal -->
     <div id="lessonModal" class="modal">
         <div class="modal-content">
@@ -330,6 +417,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
             </form>
         </div>
     </div>
+    <!-- Update Lesson Modal -->
+<div id="updateModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeUpdateModal()">&times;</span>
+        <h2>Update Lesson</h2>
+        
+        <form action="update_lesson.php" method="post" class="lesson-form">
+            <input type="hidden" id="update_lesson_id" name="lesson_id">
+            
+            <div class="form-group">
+                <label for="update_session_status">Session Status</label>
+                <select id="update_session_status" name="session_status" required>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="No Show">No Show</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Rescheduled">Rescheduled</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="update_notes">Session Notes</label>
+                <textarea id="update_notes" name="notes" rows="5"></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" onclick="closeUpdateModal()" class="button-secondary">Cancel</button>
+                <button type="submit" name="update_lesson" class="button">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+    
 
     <script>
     // Modal functionality
@@ -396,6 +516,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
                 `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         }
     });
+    // Update modal functionality
+const updateModal = document.getElementById('updateModal');
+const updateLessonIdInput = document.getElementById('update_lesson_id');
+
+function startLesson(lessonId) {
+    // This is where you'll add the Google Meet link functionality
+    // For now, just redirect to a placeholder URL
+    window.open('https://meet.google.com/qbn-zfsj-zxa');
+    
+    // You can also update the lesson status to "In Progress" if you want
+    // window.location.href = `update_lesson_status.php?id=${lessonId}&status=In%20Progress`;
+}
+
+function openUpdateModal(lessonId) {
+    updateLessonIdInput.value = lessonId;
+    updateModal.style.display = 'flex';
+    
+    // You can fetch the current lesson data with AJAX if needed
+    // For now, we'll just open the modal with empty fields
+}
+
+function closeUpdateModal() {
+    updateModal.style.display = 'none';
+}
+
+// Close the update modal if clicked outside
+window.addEventListener('click', function(event) {
+    if (event.target == updateModal) {
+        closeUpdateModal();
+    }
+});
     </script>
 </body>
 </html>

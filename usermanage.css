@@ -1,0 +1,550 @@
+/* Base Styles and Variables */
+:root {
+    --primary: #0ea5e9;
+    --primary-hover: #0284c7;
+    --primary-foreground: #ffffff;
+    --secondary: #f3f4f6;
+    --secondary-foreground: #1f2937;
+    --background: #ffffff;
+    --foreground: #1f2937;
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
+    --card: #ffffff;
+    --card-foreground: #1f2937;
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #0ea5e9;
+    --radius: 0.5rem;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  body {
+    background-color: #f8fafc;
+    color: var(--foreground);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Layout */
+  header {
+    background-color: var(--background);
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0;
+  }
+  
+  header p {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    margin: 0;
+  }
+  
+  main {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  
+  footer {
+    background-color: var(--background);
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  
+  section {
+    margin-bottom: 2rem;
+  }
+  
+  section h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--foreground);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--foreground);
+  }
+  
+  /* Dashboard Overview */
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .stat-box {
+    background-color: var(--card);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat-box h3 {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    margin-bottom: 0.5rem;
+  }
+  
+  .stat-box p {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  
+  /* Chart */
+  canvas#userChart {
+    background-color: var(--card);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border);
+    max-height: 400px;
+    width: 100%;
+  }
+  
+  /* Tabs */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    gap: 0.25rem;
+  }
+  
+  .tabs button {
+    padding: 0.75rem 1.25rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .tabs button:hover {
+    color: var(--foreground);
+  }
+  
+  .tabs button.active {
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+  }
+  
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1rem;
+  }
+  
+  table th, table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  table th {
+    font-weight: 600;
+    color: var(--muted-foreground);
+    background-color: var(--muted);
+    position: sticky;
+    top: 0;
+  }
+  
+  table th:first-child {
+    border-top-left-radius: var(--radius);
+  }
+  
+  table th:last-child {
+    border-top-right-radius: var(--radius);
+  }
+  
+  table tr:last-child td:first-child {
+    border-bottom-left-radius: var(--radius);
+  }
+  
+  table tr:last-child td:last-child {
+    border-bottom-right-radius: var(--radius);
+  }
+  
+  table tr:hover td {
+    background-color: var(--muted);
+  }
+  
+  /* Search Inputs */
+  input[type="text"], input[type="email"], input[type="password"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--card);
+    margin-bottom: 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  
+  input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25);
+  }
+  
+  /* Forms */
+  form {
+    background-color: var(--card);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  form h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--foreground);
+  }
+  
+  form div {
+    margin-bottom: 1rem;
+  }
+  
+  form label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--foreground);
+  }
+  
+  /* Buttons */
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border: none;
+  }
+  
+  button:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25);
+  }
+  
+  table button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+  }
+  
+  .user-type-selector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Modals */
+  #user-modal, #edit-modal, #delete-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  
+  #modal-content, #edit-modal-content, #delete-modal-content {
+    background-color: var(--card);
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  
+  #close-modal, #close-edit-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--muted-foreground);
+    transition: color 0.2s;
+  }
+  
+  #close-modal:hover, #close-edit-modal:hover {
+    color: var(--foreground);
+  }
+  
+  /* User Details */
+  #user-details h3, #edit-form-container h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--foreground);
+  }
+  
+  #user-details p {
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  #user-details h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem;
+    color: var(--foreground);
+  }
+  
+  #user-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+  
+  #user-details li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  #user-details li:last-child {
+    border-bottom: none;
+  }
+  
+  /* Success and Error Messages */
+  .success-message, .error-message {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .success-message {
+    background-color: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: var(--success);
+  }
+  
+  .error-message {
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    
+    .stats-container {
+      grid-template-columns: 1fr;
+    }
+    
+    .tabs {
+      flex-wrap: wrap;
+    }
+    
+    table {
+      display: block;
+      overflow-x: auto;
+    }
+    
+    #modal-content, #edit-modal-content, #delete-modal-content {
+      width: 95%;
+      padding: 1.5rem;
+    }
+  }
+  
+  /* Additional Stylish Elements */
+  .tab-content {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* Delete confirmation modal */
+  #delete-modal-content {
+    max-width: 500px;
+    text-align: center;
+  }
+  
+  #delete-modal-content h3 {
+    color: var(--danger);
+    margin-bottom: 1rem;
+  }
+  
+  #delete-message {
+    margin-bottom: 1.5rem;
+  }
+  
+  #delete-form {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+  }
+  
+  #delete-form button[type="button"] {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+  
+  #delete-form button[type="button"]:hover {
+    background-color: #e5e7eb;
+  }
+  
+  #delete-form button[type="submit"] {
+    background-color: var(--danger);
+  }
+  
+  #delete-form button[type="submit"]:hover {
+    background-color: #dc2626;
+  }
+  
+  /* Logout button */
+  header button {
+    background-color: transparent;
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
+  }
+  
+  header button:hover {
+    background-color: var(--muted);
+    color: var(--foreground);
+  }
+  
+  /* Chart container styling */
+  .chart-container {
+    background-color: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  
+  /* Loading indicator */
+  .loading {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid rgba(14, 165, 233, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--primary);
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 0.5rem;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Action buttons */
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  button.view-btn {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+  
+  button.view-btn:hover {
+    background-color: #e5e7eb;
+  }
+  
+  button.edit-btn {
+    background-color: var(--primary);
+  }
+  
+  button.delete-btn {
+    background-color: var(--danger);
+  }
+  
+  button.delete-btn:hover {
+    background-color: #dc2626;
+  }

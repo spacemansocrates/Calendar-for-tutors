@@ -1,0 +1,209 @@
+/* Global Reset and Base Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    line-height: 1.6;
+    background-color: #0c0a09;
+    color: #fafaf9;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Container Styles */
+.container {
+    display: flex;
+    gap: 2rem;
+    background-color: #1c1917;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Section Styles */
+.homework-assign, .homework-list {
+    width: 50%;
+    padding: 1rem;
+}
+
+.homework-assign {
+    border-right: 1px solid #292524;
+}
+
+/* Headings */
+h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #e7e5e4;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #44403c;
+}
+
+/* Form Styles */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #a8a29e;
+    margin-bottom: 0.25rem;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background-color: #292524;
+    border: 1px solid #44403c;
+    border-radius: 0.375rem;
+    color: #fafaf9;
+    transition: border-color 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #6d28d9;
+    box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.2);
+}
+
+button {
+    padding: 0.625rem 1.25rem;
+    background-color: #6d28d9;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #5b21b6;
+}
+
+/* Homework List Styles */
+.homework-item {
+    background-color: #262423;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #44403c;
+}
+
+.homework-item h3 {
+    color: #e7e5e4;
+    margin-bottom: 0.5rem;
+}
+
+.homework-item p {
+    color: #a8a29e;
+    font-size: 0.875rem;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filters select {
+    flex-grow: 1;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.pagination a {
+    padding: 0.25rem 0.75rem;
+    background-color: #292524;
+    color: #a8a29e;
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+}
+
+.pagination a:hover {
+    background-color: #44403c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .homework-assign, .homework-list {
+        width: 100%;
+        border-right: none;
+    }
+}
+
+/* Error and Success Messages */
+.error {
+    color: #ef4444;
+    background-color: #451a03;
+    border: 1px solid #7f1d1d;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.success {
+    color: #22c55e;
+    background-color: #052e16;
+    border: 1px solid #14532d;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+/* File Link Styling */
+.file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: #6d28d9;
+    font-weight: 500;
+    font-size: 0.875rem;
+    background-color: rgba(109, 40, 217, 0.1);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(109, 40, 217, 0.2);
+    transition: all 0.2s ease;
+}
+
+.file-link:hover {
+    background-color: rgba(109, 40, 217, 0.15);
+    border-color: rgba(109, 40, 217, 0.3);
+}
+
+.file-link::before {
+    content: '';
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>');
+    background-size: contain;
+    background-repeat: no-repeat;
+    margin-right: 0.5rem;
+}
+
+.file-link:active {
+    transform: scale(0.98);
+    background-color: rgba(109, 40, 217, 0.2);
+}

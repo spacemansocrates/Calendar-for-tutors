@@ -2,9 +2,9 @@
 // Start session
 session_start();
 
-// Check if tutor is logged in
-if (!isset($_SESSION['tutor_id'])) {
-    header('Location: tutor-login.php');
+// Check if admin is logged in
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: admin-login.php');
     exit();
 }
 
@@ -20,19 +20,27 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Get tutor information
-$tutor_id = $_SESSION['tutor_id'];
-$stmt = $conn->prepare("SELECT * FROM tutors WHERE id = ?");
-$stmt->bind_param("i", $tutor_id);
+// Get admin information
+$admin_id = $_SESSION['admin_id'];
+$stmt = $conn->prepare("SELECT * FROM admins WHERE admin_id = ?");
+$stmt->bind_param("i", $admin_id);
 $stmt->execute();
-$tutor_result = $stmt->get_result();
-$tutor = $tutor_result->fetch_assoc();
+$admin_result = $stmt->get_result();
+$admin = $admin_result->fetch_assoc();
 $stmt->close();
 
 // Get all students
 $stmt = $conn->prepare("SELECT * FROM students ORDER BY name ASC");
 $stmt->execute();
 $students_result = $stmt->get_result();
+$students = $students_result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Get all tutors
+$stmt = $conn->prepare("SELECT * FROM tutors ORDER BY name ASC");
+$stmt->execute();
+$tutors_result = $stmt->get_result();
+$tutors = $tutors_result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // Process form submission
@@ -43,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate required fields
     if (
         empty($_POST['student_name']) ||
+        empty($_POST['tutor_id']) ||
         empty($_POST['lesson_type']) ||
         empty($_POST['start_time']) ||
         empty($_POST['end_time'])
@@ -50,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = "Please fill in all required fields.";
     } else {
         $student_name = $_POST['student_name'];
+        $tutor_id = $_POST['tutor_id'];
         $lesson_type = $_POST['lesson_type'];
         $start_time = $_POST['start_time'];
         $end_time = $_POST['end_time'];
@@ -131,7 +141,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             
             if ($stmt->execute()) {
-                $success_message = "Lesson successfully scheduled for $student_name on $lesson_date.";
+                // Get tutor name for display message
+                $tutor_name = "";
+                foreach ($tutors as $tutor) {
+                    if ($tutor['id'] == $tutor_id) {
+                        $tutor_name = $tutor['name'];
+                        break;
+                    }
+                }
+                $success_message = "Lesson successfully scheduled for $student_name with $tutor_name on $lesson_date.";
             } else {
                 $error_message = "Failed to schedule lesson: " . $conn->error;
             }
@@ -144,6 +162,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $today = date('Y-m-d');
 $max_date = date('Y-m-d', strtotime('+6 months'));
 
+// Get recent lessons (for display in the recent schedules section)
+$stmt = $conn->prepare("
+    SELECT l.*, t.name as tutor_name 
+    FROM lessons l 
+    JOIN tutors t ON l.tutor_id = t.id 
+    ORDER BY l.created_at DESC 
+    LIMIT 10");
+$stmt->execute();
+$recent_lessons = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
 $conn->close();
 ?>
 
@@ -152,19 +181,20 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule Lessons - Tutor System</title>
+    <title>Schedule Lessons - Admin System</title>
     <link rel="stylesheet" href="scheduling.css">
 </head>
 <body>
     <header>
         <h1>Schedule Lessons</h1>
         <div class="user-info">
-            <p>Logged in as: <?php echo htmlspecialchars($tutor['name']); ?></p>
+            <p>Logged in as: <?php echo htmlspecialchars($admin['username']); ?> (Admin)</p>
             <nav>
                 <ul>
-                    <li><a href="tutor_dashboard.php">Dashboard</a></li>
+                    <li><a href="admin_dashboard.php">Dashboard</a></li>
                     <li><a href="manage_students.php">Manage Students</a></li>
-                    <li><a href="tutor_logout.php">Logout</a></li>
+                    <li><a href="manage_tutors.php">Manage Tutors</a></li>
+                    <li><a href="admin_logout.php">Logout</a></li>
                 </ul>
             </nav>
         </div>
@@ -191,14 +221,27 @@ $conn->close();
                     <label for="student_name">Select Student: <span class="required">*</span></label>
                     <select id="student_name" name="student_name" required>
                         <option value="">-- Select a student --</option>
-                        <?php while ($student = $students_result->fetch_assoc()): ?>
+                        <?php foreach ($students as $student): ?>
                             <option value="<?php echo htmlspecialchars($student['name']); ?>">
                                 <?php echo htmlspecialchars($student['name']); ?> 
                                 <?php if (!empty($student['grade'])): ?>
                                     (Grade: <?php echo htmlspecialchars($student['grade']); ?>)
                                 <?php endif; ?>
                             </option>
-                        <?php endwhile; ?>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Tutor Selection (New) -->
+                <div class="form-group">
+                    <label for="tutor_id">Select Tutor: <span class="required">*</span></label>
+                    <select id="tutor_id" name="tutor_id" required>
+                        <option value="">-- Select a tutor --</option>
+                        <?php foreach ($tutors as $tutor): ?>
+                            <option value="<?php echo $tutor['id']; ?>">
+                                <?php echo htmlspecialchars($tutor['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
@@ -291,13 +334,204 @@ $conn->close();
 
         <section class="recent-schedules">
             <h2>Recently Scheduled Lessons</h2>
-            <p>Your recent lesson schedules will appear here.</p>
-            <!-- In a real application, this would show a list of recently scheduled lessons -->
+            <?php if (empty($recent_lessons)): ?>
+                <p>No lessons have been scheduled yet.</p>
+            <?php else: ?>
+                <table class="lessons-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Tutor</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($recent_lessons as $lesson): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($lesson['student_name']); ?></td>
+                                <td><?php echo htmlspecialchars($lesson['tutor_name']); ?></td>
+                                <td><?php echo date('M j, Y', strtotime($lesson['lesson_date'])); ?></td>
+                                <td><?php echo date('g:i A', strtotime($lesson['start_time'])); ?> - <?php echo date('g:i A', strtotime($lesson['end_time'])); ?></td>
+                                <td><?php echo htmlspecialchars($lesson['lesson_type']); ?></td>
+                                <td><?php echo htmlspecialchars($lesson['session_status']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </section>
     </main>
+    <style>
+        /* Variables for consistent styling */
+:root {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --ring: #71717a;
+  --radius: 0.5rem;
+}
+
+/* Base styles */
+.recent-schedules {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: var(--foreground);
+  margin: 2rem 0;
+  background-color: var(--background);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.recent-schedules h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--foreground);
+}
+
+/* Table styling */
+.lessons-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.lessons-table thead tr {
+  background-color: var(--secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.lessons-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lessons-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s ease;
+}
+
+.lessons-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.lessons-table tbody tr:hover {
+  background-color: var(--accent);
+}
+
+.lessons-table td {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  vertical-align: middle;
+}
+
+/* Status styling */
+.lessons-table td:last-child {
+  font-weight: 500;
+}
+
+/* Add some responsive styling */
+@media (max-width: 768px) {
+  .lessons-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .lessons-table th,
+  .lessons-table td {
+    padding: 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .recent-schedules h2 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Empty state styling */
+.recent-schedules p {
+  padding: 1.5rem;
+  color: var(--muted-foreground);
+  background-color: var(--secondary);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+/* Additional shadcn touches */
+.lessons-table td:nth-child(6) {
+  position: relative;
+}
+
+/* Status indicators */
+.lessons-table td:nth-child(6)::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.lessons-table td:nth-child(6):contains("Completed")::before {
+  background-color: #10b981; /* Green for completed */
+}
+
+.lessons-table td:nth-child(6):contains("Scheduled")::before {
+  background-color: #3b82f6; /* Blue for scheduled */
+}
+
+.lessons-table td:nth-child(6):contains("Canceled")::before {
+  background-color: var(--destructive); /* Red for canceled */
+}
+
+.lessons-table td:nth-child(6):contains("Pending")::before {
+  background-color: #f59e0b; /* Amber for pending */
+}
+
+/* Since :contains is not standard CSS, you can use classes instead */
+.status-completed::before {
+  background-color: #10b981 !important;
+}
+
+.status-scheduled::before {
+  background-color: #3b82f6 !important;
+}
+
+.status-canceled::before {
+  background-color: var(--destructive) !important;
+}
+
+.status-pending::before {
+  background-color: #f59e0b !important;
+}
+    </style>
 
     <footer>
-        <p>&copy; <?php echo date('Y'); ?> Tutor System. All rights reserved.</p>
+        <p>&copy; <?php echo date('Y'); ?> Bloom Education System. All rights reserved.</p>
     </footer>
 
     <script>
@@ -371,3 +605,5 @@ $conn->close();
             });
         });
     </script>
+</body>
+</html>
