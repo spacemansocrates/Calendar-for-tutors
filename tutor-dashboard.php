@@ -177,10 +177,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
                                 echo '<div class="lesson-student">' . htmlspecialchars($lesson['student_name']) . '</div>';
                                 echo '<div class="lesson-type">' . htmlspecialchars($lesson['lesson_type']) . '</div>';
                                 
-                                // Add Google Meet button for scheduled lessons
-                                if ($lesson['session_status'] == 'Scheduled') {
+                                                                    // Add Google Meet button for scheduled lessons
+                                                                    $currentTime = time();
+                                                                    $startedAt = !empty($lesson['started_at']) ? strtotime($lesson['started_at']) : null;
+                                                                    $elapsedTime = $startedAt ? $currentTime - $startedAt : null;
+                                                                    
+                                                                    if ($lesson['session_status'] == 'Scheduled' && ($startedAt === null || $elapsedTime < 300)) { 
+                                                                    
+
                                     echo '<div class="lesson-actions">';
-                                    echo '<button class="meet-button" onclick="startLesson(' . $lesson['id'] . ')">Join Meet</button>';
+                                    if ($lesson['started_at'] === NULL || $elapsedTime < 300) {
+                                        echo '<button class="meet-button" onclick="startLesson(' . $lesson['id'] . ')">Join Meet</button>';
+                                    } else {
+                                        echo '<button class="update-button" onclick="openUpdateModal(' . $lesson['id'] . ')">Update</button>';
+                                    }
+                                    
                                     echo '</div>';
                                 }
                                 
@@ -521,13 +532,32 @@ const updateModal = document.getElementById('updateModal');
 const updateLessonIdInput = document.getElementById('update_lesson_id');
 
 function startLesson(lessonId) {
-    // This is where you'll add the Google Meet link functionality
-    // For now, just redirect to a placeholder URL
-    window.open('https://meet.google.com/qbn-zfsj-zxa');
-    
-    // You can also update the lesson status to "In Progress" if you want
-    // window.location.href = `update_lesson_status.php?id=${lessonId}&status=In%20Progress`;
+    // Open Google Meet in a new tab
+    window.open('https://meet.google.com/qbn-zfsj-zxa', '_blank');
+
+    // Send an AJAX request to update the lesson's started_at time
+    fetch('start_lesson.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'lesson_id=' + lessonId
+    }).then(response => response.text()).then(data => {
+        console.log(data);
+
+        // Change the button to "Update" after 5 minutes
+        setTimeout(() => {
+            const button = document.querySelector(`button[onclick="startLesson(${lessonId})"]`);
+            if (button) {
+                button.textContent = "Update";
+                button.onclick = function () {
+                    openUpdateModal(lessonId);
+                };
+                button.classList.remove('meet-button');
+                button.classList.add('update-button');
+            }
+        }, 5 * 60 * 1000); // 5 minutes delay
+    });
 }
+
 
 function openUpdateModal(lessonId) {
     updateLessonIdInput.value = lessonId;
