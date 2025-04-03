@@ -1,5 +1,6 @@
 <?php
 // Start session
+// Start session
 session_start();
 
 // Database connection
@@ -15,6 +16,26 @@ if (!isset($_SESSION['tutor_id'])) {
 // Get current tutor information
 $tutorId = $_SESSION['tutor_id'];
 $tutorName = $_SESSION['tutor_name'];
+
+// Initialize tutorLink variable
+$tutorLink = "";
+
+// Fetch the tutor's link from the database
+$sql = "SELECT link FROM tutors WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $tutorId);
+$stmt->execute();
+$stmt->bind_result($tutorLink);
+$stmt->fetch();
+$stmt->close();
+
+
+// Check if a link was found
+// if (!empty($tutorLink)) {
+//     echo "Tutor Link: <a href='$tutorLink'>$tutorLink</a>";
+// } else {
+//     echo "No link available.";
+// }
 
 // Get current month and year
 $month = isset($_GET['month']) ? intval($_GET['month']) : intval(date('m'));
@@ -147,67 +168,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
                 </div>
 
                 <div class="calendar-days">
-                    <?php
-                    // Fill in blank days until the first day of the month
-                    for ($i = 0; $i < $dayOfWeek; $i++) {
-                        echo '<div class="calendar-day empty"></div>';
-                    }
-                    
-                    // Display all days of the month
-                    for ($day = 1; $day <= $numberDays; $day++) {
-                        $currentDate = sprintf("%04d-%02d-%02d", $year, $month, $day);
-                        $isToday = ($day == date('j') && $month == date('m') && $year == date('Y'));
-                        $dayClass = $isToday ? 'calendar-day today' : 'calendar-day';
-                        
-                        echo '<div class="' . $dayClass . '">';
-                        echo '<div class="day-header">';
-                        echo '<span class="day-number">' . $day . '</span>';
-                        echo '<button type="button" class="add-lesson-btn" onclick="openLessonModal(\'' . $currentDate . '\')">+</button>';
-                        echo '</div>';
-                        
-                        // Display lessons for this day
-                        if (isset($lessons[$day]) && !empty($lessons[$day])) {
-                            echo '<div class="day-lessons">';
-                            foreach ($lessons[$day] as $lesson) {
-                                $startTime = date('g:ia', strtotime($lesson['start_time']));
-                                $statusClass = strtolower(str_replace(' ', '-', $lesson['session_status']));
-                                
-                                echo '<div class="lesson-item ' . $statusClass . '">';
-                                echo '<div class="lesson-time">' . $startTime . '</div>';
-                                echo '<div class="lesson-student">' . htmlspecialchars($lesson['student_name']) . '</div>';
-                                echo '<div class="lesson-type">' . htmlspecialchars($lesson['lesson_type']) . '</div>';
-                                
-                                // Add Google Meet button for scheduled lessons
-                                if ($lesson['session_status'] == 'Scheduled') {
-                                    echo '<div class="lesson-actions">';
-                                    echo '<button class="meet-button" onclick="startLesson(' . $lesson['id'] . ')">Join Meet</button>';
-                                    echo '</div>';
-                                }
-                                
-                                // Add Update button for completed lessons
-                                if ($lesson['session_status'] == 'Delivered') {
-                                    echo '<div class="lesson-actions">';
-                                    echo '<button class="update-button" onclick="openUpdateModal(' . $lesson['id'] . ')">Update</button>';
-                                    echo '</div>';
-                                }
-                                
-                                echo '</div>';
-                            }
-                            echo '</div>';
-                        }
-                        
-                        echo '</div>';
-                    }
-                    
-                    // Fill in remaining days of the week
-                    $remainingDays = 7 - (($dayOfWeek + $numberDays) % 7);
-                    if ($remainingDays < 7) {
-                        for ($i = 0; $i < $remainingDays; $i++) {
-                            echo '<div class="calendar-day empty"></div>';
-                        }
-                    }
-                    ?>
-                </div>
+    <?php
+    // Fill in blank days until the first day of the month
+    for ($i = 0; $i < $dayOfWeek; $i++) {
+        echo '<div class="calendar-day empty"></div>';
+    }
+    
+    // Display all days of the month
+    for ($day = 1; $day <= $numberDays; $day++) {
+        $currentDate = sprintf("%04d-%02d-%02d", $year, $month, $day);
+        $isToday = ($day == date('j') && $month == date('m') && $year == date('Y'));
+        $dayClass = $isToday ? 'calendar-day today' : 'calendar-day';
+        
+        echo '<div class="' . $dayClass . '">';
+        echo '<div class="day-header">';
+        echo '<span class="day-number">' . $day . '</span>';
+        echo '<button type="button" class="add-lesson-btn" onclick="openLessonModal(\'' . $currentDate . '\')">+</button>';
+        echo '</div>';
+        
+        // Display lessons for this day
+        if (isset($lessons[$day]) && !empty($lessons[$day])) {
+            echo '<div class="day-lessons">';
+            foreach ($lessons[$day] as $lesson) {
+                $startTime = date('g:ia', strtotime($lesson['start_time']));
+                $statusClass = strtolower(str_replace(' ', '-', $lesson['session_status']));
+                
+                echo '<div class="lesson-item ' . $statusClass . '">';
+                echo '<div class="lesson-time">' . $startTime . '</div>';
+                echo '<div class="lesson-student">' . htmlspecialchars($lesson['student_name'] ?? '') . '</div>';
+                echo '<div class="lesson-type">' . htmlspecialchars($lesson['lesson_type'] ?? '') . '</div>';
+
+                
+                // Add Google Meet button for scheduled lessons
+                $currentTime = time();
+                $startedAt = !empty($lesson['started_at']) ? strtotime($lesson['started_at']) : null;
+                $elapsedTime = $startedAt ? $currentTime - $startedAt : null;
+                
+                echo '<div class="lesson-actions">';
+                if ($lesson['session_status'] == 'Scheduled' && ($startedAt === null || $elapsedTime < 300)) {
+                    // Make sure to include the tutorLink parameter, possibly from the $lesson array
+                    echo '<button class="meet-button" onclick="startLesson(' . $lesson['id'] . ', \'' . htmlspecialchars($tutorLink, ENT_QUOTES) . '\')">Join Meet</button>';
+                } else if ($lesson['session_status'] == 'Delivered') {
+                    echo '<button class="update-button" onclick="openUpdateModal(' . $lesson['id'] . ')">Update</button>';
+                }
+                echo '</div>'; // Close lesson-actions
+                
+                echo '</div>'; // Close lesson-item
+            }
+            echo '</div>'; // Close day-lessons
+        }
+        
+        echo '</div>'; // Close calendar-day
+    }
+    
+    // Fill in remaining days of the week
+    $remainingDays = 7 - (($dayOfWeek + $numberDays) % 7);
+    if ($remainingDays < 7) {
+        for ($i = 0; $i < $remainingDays; $i++) {
+            echo '<div class="calendar-day empty"></div>';
+        }
+    }
+    ?>
+</div>
             </div>
         </div>
         <style>
@@ -355,7 +377,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
     </div>
 
     <div class="card">
-    <h2>Chat</h2>
+    <h2>Videos</h2>
+    <video id="lessonVideo" controls style="width: 100%; max-width: 800px; display: none;">
+    <source src="" type="video/webm">
+    Your browser does not support the video tag.
+</video>
     </div>
     <!-- Add Lesson Modal -->
     <div id="lessonModal" class="modal">
@@ -449,84 +475,228 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_lesson'])) {
         </form>
     </div>
 </div>
-    
+<script>
+// Modal functionality
+const modal = document.getElementById('lessonModal');
+const lessonDateInput = document.getElementById('lesson_date');
 
-    <script>
-    // Modal functionality
-    const modal = document.getElementById('lessonModal');
-    const lessonDateInput = document.getElementById('lesson_date');
-    
-    function openLessonModal(date) {
-        lessonDateInput.value = date;
-        modal.style.display = 'flex';
-        // Auto set times to common lesson times
-        const now = new Date();
-        const hours = now.getHours();
-        const startHour = (hours < 12) ? '09:00' : '16:00';
-        const endHour = (hours < 12) ? '10:00' : '17:00';
-        document.getElementById('start_time').value = startHour;
-        document.getElementById('end_time').value = endHour;
+function openLessonModal(date) {
+    lessonDateInput.value = date;
+    modal.style.display = 'flex';
+    // Auto set times to common lesson times
+    const now = new Date();
+    const hours = now.getHours();
+    const startHour = (hours < 12) ? '09:00' : '16:00';
+    const endHour = (hours < 12) ? '10:00' : '17:00';
+    document.getElementById('start_time').value = startHour;
+    document.getElementById('end_time').value = endHour;
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+}
+
+// Close the modal if user clicks outside the modal content
+window.addEventListener('click', function(event) {
+    if (event.target == modal) {
+        closeModal();
     }
-    
-    function closeModal() {
-        modal.style.display = 'none';
+});
+
+// Set end time automatically when start time changes (1 hour later)
+document.getElementById('start_time').addEventListener('change', function() {
+    const startTime = this.value;
+    if (startTime) {
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const endHour = (hours + 1) % 24;
+        document.getElementById('end_time').value = 
+            `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
+});
+
+// Handle lesson type change - set default durations
+document.getElementById('lesson_type').addEventListener('change', function() {
+    const lessonType = this.value;
+    const startTime = document.getElementById('start_time').value;
     
-    // Close the modal if user clicks outside the modal content
-    window.addEventListener('click', function(event) {
-        if (event.target == modal) {
-            closeModal();
-        }
-    });
-    
-    // Set end time automatically when start time changes (1 hour later)
-    document.getElementById('start_time').addEventListener('change', function() {
-        const startTime = this.value;
-        if (startTime) {
-            const [hours, minutes] = startTime.split(':').map(Number);
-            const endHour = (hours + 1) % 24;
-            document.getElementById('end_time').value = 
-                `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-        }
-    });
-    
-    // Handle lesson type change - set default durations
-    document.getElementById('lesson_type').addEventListener('change', function() {
-        const lessonType = this.value;
-        const startTime = document.getElementById('start_time').value;
+    if (startTime && lessonType === 'Demo') {
+        // Demos are 30 minutes
+        const [hours, minutes] = startTime.split(':').map(Number);
+        let endMinutes = minutes + 30;
+        let endHour = hours;
         
-        if (startTime && lessonType === 'Demo') {
-            // Demos are 30 minutes
-            const [hours, minutes] = startTime.split(':').map(Number);
-            let endMinutes = minutes + 30;
-            let endHour = hours;
-            
-            if (endMinutes >= 60) {
-                endMinutes -= 60;
-                endHour = (endHour + 1) % 24;
-            }
-            
-            document.getElementById('end_time').value = 
-                `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-        } else if (startTime) {
-            // Regular lessons are 1 hour
-            const [hours, minutes] = startTime.split(':').map(Number);
-            const endHour = (hours + 1) % 24;
-            document.getElementById('end_time').value = 
-                `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        if (endMinutes >= 60) {
+            endMinutes -= 60;
+            endHour = (endHour + 1) % 24;
         }
-    });
-    // Update modal functionality
+        
+        document.getElementById('end_time').value = 
+            `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+    } else if (startTime) {
+        // Regular lessons are 1 hour
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const endHour = (hours + 1) % 24;
+        document.getElementById('end_time').value = 
+            `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+});
+
+// Update modal functionality
 const updateModal = document.getElementById('updateModal');
 const updateLessonIdInput = document.getElementById('update_lesson_id');
 
-function startLesson(lessonId) {
-    // This is where you'll add the Google Meet link functionality
-    // For now, just redirect to a placeholder URL
-    window.open('https://meet.google.com/qbn-zfsj-zxa');
+let mediaRecorder;
+let recordedChunks = [];
+
+function startLesson(lessonId, tutorLink) {
+    if (tutorLink && !tutorLink.startsWith('http://') && !tutorLink.startsWith('https://')) {
+        tutorLink = 'https://' + tutorLink;
+    }
     
-    // You can also update the lesson status to "In Progress" if you want
-    // window.location.href = `update_lesson_status.php?id=${lessonId}&status=In%20Progress`;
+    // Guard against empty links
+    if (!tutorLink) {
+        alert("Error: Meeting link is not available.");
+        return;
+    }
+    
+    // Open tutor's specific Google Meet link in a new tab
+    const meetTab = window.open(tutorLink, '_blank');
+    // Show instructions to the tutor
+    alert("Please click 'Start Recording' after joining the Google Meet session. When finished, click 'Stop Recording' to save and upload.");
+    
+    // Add recording controls to the original page
+    const controlsDiv = document.createElement('div');
+    controlsDiv.innerHTML = `
+        <div class="recording-controls" style="position: fixed; top: 10px; right: 10px; background: #f0f0f0; padding: 10px; border-radius: 5px; z-index: 9999;">
+            <button id="startRecording" class="btn btn-danger">Start Recording</button>
+            <button id="stopRecording" class="btn btn-secondary" disabled>Stop Recording</button>
+            <div id="recordingStatus">Not recording</div>
+        </div>
+    `;
+    document.body.appendChild(controlsDiv);
+    
+    // Set up recording button handlers
+    document.getElementById('startRecording').addEventListener('click', () => {
+        startScreenRecording(lessonId);
+        document.getElementById('startRecording').disabled = true;
+        document.getElementById('stopRecording').disabled = false;
+        document.getElementById('recordingStatus').textContent = "Recording...";
+    });
+    
+    document.getElementById('stopRecording').addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        document.getElementById('startRecording').disabled = false;
+        document.getElementById('stopRecording').disabled = true;
+        document.getElementById('recordingStatus').textContent = "Processing...";
+    });
+    
+    // Send request to update lesson start time
+    fetch('start_lesson.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'lesson_id=' + lessonId
+    }).then(response => response.text()).then(data => {
+        console.log(data);
+    });
+
+    // Change button to "Update" after lesson starts (5 minutes delay)
+    setTimeout(() => {
+        // Use escaped tutorLink inside querySelector
+        const button = document.querySelector(`button[onclick="startLesson(${lessonId}, '${tutorLink.replace(/'/g, "\\'")}')"]`);
+        
+        if (button) {
+            button.textContent = "Update";
+            button.onclick = function() {
+                openUpdateModal(lessonId);
+            };
+            button.classList.remove('meet-button');
+            button.classList.add('update-button');
+        }
+    }, 5 * 60 * 1000);
+}
+
+function startScreenRecording(lessonId) {
+    // Reset recorded chunks
+    recordedChunks = [];
+    
+    // Request screen capture with audio
+    navigator.mediaDevices.getDisplayMedia({ 
+        video: { 
+            displaySurface: "browser",
+            cursor: "always"
+        }, 
+        audio: true 
+    }).then(stream => {
+        console.log("Screen capture started");
+        
+        // Create media recorder
+        mediaRecorder = new MediaRecorder(stream, {mimeType: 'video/webm;codecs=vp9'});
+        
+        // Handle data available event
+        mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        
+        // Handle recording stop
+        mediaRecorder.onstop = () => {
+            console.log("Recording stopped, preparing to upload");
+            document.getElementById('recordingStatus').textContent = "Uploading...";
+            
+            // Combine recorded chunks into a single blob
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const file = new File([blob], `lesson_${lessonId}_${Date.now()}.webm`, { type: "video/webm" });
+            
+            // Upload the recording
+            uploadRecording(file, lessonId);
+            
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+        };
+        
+        // Start recording
+        mediaRecorder.start(1000); // Capture in 1-second chunks
+        console.log("Recording started");
+        
+    }).catch(error => {
+        console.error("Screen recording failed:", error);
+        alert("Failed to start recording: " + error.message);
+        document.getElementById('startRecording').disabled = false;
+        document.getElementById('stopRecording').disabled = true;
+        document.getElementById('recordingStatus').textContent = "Recording failed";
+    });
+}
+
+function uploadRecording(file, lessonId) {
+    let formData = new FormData();
+    formData.append("video", file);
+    formData.append("lesson_id", lessonId);
+    
+    fetch('upload_recording.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        console.log("Upload Response:", data);
+        document.getElementById('recordingStatus').textContent = "Upload complete";
+        
+        // Optionally refresh the page or video display
+        if (document.getElementById('lessonVideo')) {
+            // If there's a video player on the page, update its source
+            const videoPlayer = document.getElementById('lessonVideo');
+            videoPlayer.style.display = 'block';
+            videoPlayer.src = data.includes('http') ? data : 'recordings/lesson_' + lessonId + '_' + Date.now() + '.webm';
+        }
+    })
+    .catch(error => {
+        console.error("Upload failed:", error);
+        document.getElementById('recordingStatus').textContent = "Upload failed";
+        alert("Failed to upload recording: " + error.message);
+    });
 }
 
 function openUpdateModal(lessonId) {
@@ -547,6 +717,5 @@ window.addEventListener('click', function(event) {
         closeUpdateModal();
     }
 });
-    </script>
+</script>
 </body>
-</html>
